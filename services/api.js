@@ -46,8 +46,12 @@ const apiService = {
 };
 
 // Gestion des erreurs
-const handleApiError = (error) => {
+const handleApiError = async (error) => {
   if (error.response) {
+    if (error.response.status === 403) {
+      await AsyncStorage.removeItem('user');  // Déconnexion automatique
+      router.push('/auth');  // Redirection vers l'écran de connexion
+    }
     throw new Error(error.response.data.message || 'Erreur lors de la requête.');
   } else if (error.request) {
     throw new Error('Aucune réponse du serveur.');
@@ -55,5 +59,6 @@ const handleApiError = (error) => {
     throw new Error('Erreur inattendue.');
   }
 };
+
 
 export default apiService;
