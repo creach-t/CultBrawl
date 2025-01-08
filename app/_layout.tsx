@@ -1,27 +1,48 @@
+import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Slot, router } from 'expo-router';
+import { Platform } from 'react-native';
 import { Provider as PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UserProvider, useUser } from '../context/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from './Header';
+import Header from './header';
+import { HapticTab } from '@/components/HapticTab';
+import { IconSymbol } from '@/components/ui/IconSymbol';
+import TabBarBackground from '@/components/ui/TabBarBackground';
+import { Colors } from '@/constants/Colors';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
+// Layout principal avec contexte et provider
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <PaperProvider>
         <UserProvider>
-          <RootWithHeader />
+          <RootWithTabs />
         </UserProvider>
       </PaperProvider>
     </SafeAreaProvider>
   );
 }
 
-// Rendu de l'application avec Header dynamique
-function RootWithHeader() {
-  const { setUser } = useUser();
+// Rendu des onglets avec Header intégré
+function RootWithTabs() {
+  const { user, setUser } = useUser();
   const [loading, setLoading] = useState(true);
+  const colorScheme = useColorScheme();
+
+  const allowedScreens = [
+    { name: 'index', title: 'Home', icon: 'home.tab', visible: true },
+    { name: 'battlelist', title: 'Battles', icon: 'battle.tab', visible: true },
+    { name: 'entitylist', title: 'Entity', icon: 'entity.tab', visible: !!user },
+    { name: 'account', title: 'Account', icon: 'account.tab', visible: false },
+    { name: 'auth', title: 'Login', icon: 'account.circle', visible: false },
+    { name: 'signup', title: 'Register', icon: 'account.circle', visible: false },
+    { name: 'header', title: 'Battle', icon: 'battle.tab', visible: false },
+    { name: 'leaderboard', title: 'Leaderboard', icon: 'leaderboard.tab', visible: true },
+    { name: 'addmovie', title: 'Add Movie', icon: 'leaderboard.tab', visible: false },
+    { name: 'addbattle', title: 'Add Battle', icon: 'leaderboard.tab', visible: false },
+  ];
 
   useEffect(() => {
     const checkUser = async () => {
@@ -36,13 +57,39 @@ function RootWithHeader() {
   }, []);
 
   if (loading) {
-    return null;  // Éviter d'afficher avant la récupération du user
+    return null;  // Empêche l'affichage prématuré
   }
 
   return (
     <>
-      <Header />
-      <Slot />  {/* Rendu des pages */}
+      <Header />  {/* L'en-tête est affiché en permanence */}
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          headerShown: false,
+          tabBarButton: HapticTab,
+          tabBarBackground: TabBarBackground,
+          tabBarStyle: Platform.select({
+            ios: {
+              position: 'absolute', // Blur sur iOS
+            },
+            default: {},
+          }),
+        }}>
+        {allowedScreens.map((screen) => (
+          <Tabs.Screen
+            key={screen.name}
+            name={screen.name}
+            options={{
+              ...(screen.visible ? {} : { href: null }),  // Ajoute href: null seulement si visible est false
+              title: screen.title,
+              tabBarIcon: ({ color }) => (
+                <IconSymbol size={28} name={screen.icon} color={color} />
+              ),
+            }}
+          />
+        ))}
+      </Tabs>
     </>
   );
 }

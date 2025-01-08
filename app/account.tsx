@@ -2,27 +2,36 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import api from '../services/api';
+import { useUser } from '../context/UserContext';
 
 export default function Account() {
-  const [user, setUser] = useState({});
+  const { user } = useUser();  // Récupère le user et token du contexte
+  const [profile, setProfile] = useState({});
   const [isEditing, setIsEditing] = useState({
     firstname: false,
     lastname: false,
     email: false,
-    imageUrl: false
+    imageUrl: false,
   });
 
   const [updatedUser, setUpdatedUser] = useState({});
 
   useEffect(() => {
-    fetchUserProfile();
-  }, []);
+    if (user) {
+      fetchUserProfile();
+    } else {
+      router.push('/auth');  // Redirige vers la connexion si pas connecté
+    }
+  }, [user]);
 
   const fetchUserProfile = async () => {
     try {
-      const response = await api.get('/users/1');
-      setUser(response.user);
-      setUpdatedUser(response.user);
+      const response = await api.get('/user');
+      if (response) {
+        setProfile(response);
+        setUpdatedUser(response);
+      }
+        
     } catch (error) {
       console.error('Erreur lors de la récupération du profil:', error);
     }
@@ -34,10 +43,11 @@ export default function Account() {
 
   const handleSave = async (field) => {
     try {
-      const response = await api.put('/profile', {
-        [field]: updatedUser[field]
-      });
-      setUser({ ...user, [field]: updatedUser[field] });
+      await api.put(
+        '/profile',
+        { [field]: updatedUser[field] },
+      );
+      setProfile({ ...profile, [field]: updatedUser[field] });
       handleEdit(field);
     } catch (error) {
       console.error('Erreur lors de la mise à jour:', error);
@@ -61,9 +71,13 @@ export default function Account() {
             onChangeText={(text) => handleInputChange('firstname', text)}
           />
         ) : (
-          <Text style={styles.text}>{user.firstname || 'Non renseigné'}</Text>
+          <Text style={styles.text}>{profile.firstname || 'Non renseigné'}</Text>
         )}
-        <TouchableOpacity onPress={() => isEditing.firstname ? handleSave('firstname') : handleEdit('firstname')}>
+        <TouchableOpacity
+          onPress={() =>
+            isEditing.firstname ? handleSave('firstname') : handleEdit('firstname')
+          }
+        >
           <Text style={styles.editButton}>
             {isEditing.firstname ? 'Enregistrer' : 'Modifier'}
           </Text>
@@ -79,9 +93,13 @@ export default function Account() {
             onChangeText={(text) => handleInputChange('lastname', text)}
           />
         ) : (
-          <Text style={styles.text}>{user.lastname || 'Non renseigné'}</Text>
+          <Text style={styles.text}>{profile.lastname || 'Non renseigné'}</Text>
         )}
-        <TouchableOpacity onPress={() => isEditing.lastname ? handleSave('lastname') : handleEdit('lastname')}>
+        <TouchableOpacity
+          onPress={() =>
+            isEditing.lastname ? handleSave('lastname') : handleEdit('lastname')
+          }
+        >
           <Text style={styles.editButton}>
             {isEditing.lastname ? 'Enregistrer' : 'Modifier'}
           </Text>
@@ -97,9 +115,13 @@ export default function Account() {
             onChangeText={(text) => handleInputChange('email', text)}
           />
         ) : (
-          <Text style={styles.text}>{user.email || 'Non renseigné'}</Text>
+          <Text style={styles.text}>{profile.email || 'Non renseigné'}</Text>
         )}
-        <TouchableOpacity onPress={() => isEditing.email ? handleSave('email') : handleEdit('email')}>
+        <TouchableOpacity
+          onPress={() =>
+            isEditing.email ? handleSave('email') : handleEdit('email')
+          }
+        >
           <Text style={styles.editButton}>
             {isEditing.email ? 'Enregistrer' : 'Modifier'}
           </Text>
@@ -115,9 +137,13 @@ export default function Account() {
             onChangeText={(text) => handleInputChange('imageUrl', text)}
           />
         ) : (
-          <Text style={styles.text}>{user.imageUrl || 'Non renseigné'}</Text>
+          <Text style={styles.text}>{profile.imageUrl || 'Non renseigné'}</Text>
         )}
-        <TouchableOpacity onPress={() => isEditing.imageUrl ? handleSave('imageUrl') : handleEdit('imageUrl')}>
+        <TouchableOpacity
+          onPress={() =>
+            isEditing.imageUrl ? handleSave('imageUrl') : handleEdit('imageUrl')
+          }
+        >
           <Text style={styles.editButton}>
             {isEditing.imageUrl ? 'Enregistrer' : 'Modifier'}
           </Text>

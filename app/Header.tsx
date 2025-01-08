@@ -3,7 +3,7 @@ import { Appbar, Menu, Divider } from 'react-native-paper';
 import { useUser } from '../context/UserContext';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Text } from 'react-native';
+import { Text, View } from 'react-native';
 
 export default function Header() {
   const { user, setUser } = useUser();
@@ -15,35 +15,52 @@ export default function Header() {
     router.push('/auth');
   };
 
+  const handleProfilePress = () => {
+    if (user) {
+      setMenuVisible(true);
+    } else {
+      router.push('/auth');
+    }
+  };
+
+  const truncateUsername = (username) => {
+    return username.length > 15 ? username.substring(0, 15) + '...' : username;
+  };
+
   return (
     <Appbar.Header>
       <Appbar.Content title="CultBrawl" />
-
-      {user ? (
-        <>
-          <Appbar.Content
-            title={
-              <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-                {user.username}
-              </Text>
-            }
+      
+      {user && (
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginRight: 8 }}>
+            {truncateUsername(user.username)}
+          </Text>
+          <Appbar.Action 
+            icon="account-circle" 
+            onPress={handleProfilePress} 
           />
-          <Menu
-            visible={menuVisible}
-            onDismiss={() => setMenuVisible(false)}
-            anchor={
-              <Appbar.Action
-                icon="account-circle"
-                onPress={() => setMenuVisible(true)}
-              />
-            }
-          >
-            <Menu.Item onPress={() => router.push('/account')} title="Mon Compte" />
-            <Divider />
-            <Menu.Item onPress={handleLogout} title="Se Déconnecter" />
-          </Menu>
-        </>
-      ) : null}
+        </View>
+      )}
+      
+      {!user && (
+        <Appbar.Action 
+          icon="account-circle" 
+          onPress={handleProfilePress} 
+        />
+      )}
+
+      {user && (
+        <Menu
+          visible={menuVisible}
+          onDismiss={() => setMenuVisible(false)}
+          anchor={<Text />}
+        >
+          <Menu.Item onPress={() => router.push('/account')} title="Mon Compte" />
+          <Divider />
+          <Menu.Item onPress={handleLogout} title="Se Déconnecter" />
+        </Menu>
+      )}
     </Appbar.Header>
   );
 }
