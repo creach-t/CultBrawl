@@ -1,6 +1,8 @@
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type User = {
+  id: number;
   username: string;
   token: string;
 } | null;
@@ -22,6 +24,17 @@ export const useUser = () => {
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User>(null);
+
+  // Récupération de l'utilisateur depuis AsyncStorage
+  useEffect(() => {
+    const loadUser = async () => {
+      const storedUser = await AsyncStorage.getItem('user');
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    };
+    loadUser();
+  }, []);
 
   return (
     <UserContext.Provider value={{ user, setUser }}>

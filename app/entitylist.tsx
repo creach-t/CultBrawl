@@ -12,6 +12,7 @@ import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import { useUser } from '../context/UserContext';
 
 interface Entity {
   id: string;
@@ -24,6 +25,7 @@ interface Entity {
 export default function EntityList() {
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(false);
+  const { user } = useUser();
 
   const fetchEntities = async () => {
     setLoading(true);
@@ -60,6 +62,15 @@ export default function EntityList() {
       </View>
     </View>
   );
+
+  if (!user){
+    return (
+      <View style={styles.container}>
+        <Text style={styles.header}>Liste des Entités</Text>
+        <Text style={styles.emptyText}>Vous devez être connecté pour accéder à cette page.</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>

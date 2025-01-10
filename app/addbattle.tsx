@@ -12,6 +12,7 @@ import api from '../services/api';
 import { useUser } from '../context/UserContext';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Entity {
   id: string;
@@ -30,6 +31,12 @@ export default function AddBattle() {
   useEffect(() => {
     fetchEntities();
   }, []);
+
+    useFocusEffect(
+      React.useCallback(() => {
+        fetchEntities();
+      }, [])
+    );
 
   const fetchEntities = async () => {
     setLoading(true);

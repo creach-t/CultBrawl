@@ -49,7 +49,7 @@ export default function EntityList() {
         name: movie.Title + ' (' + movie.Year + ')',
         apiId: movie.imdbID,
         type: 'movie',
-        imageUrl: movie.Poster,
+        imageUrl: movie.Poster === 'N/A' ? 'https://placehold.jp/100x150.png' : movie.Poster,
         source: 'OMDB',
       });
       alert('Film ajouté avec succès !');
@@ -64,7 +64,7 @@ export default function EntityList() {
     const renderMovie = ({ item }: { item: Movie }) => (
     <View style={styles.card}>
       <Image
-        source={{ uri: item.Poster !== 'N/A' ? item.Poster : 'https://placehold.co/200x300' }}
+        source={{ uri: item.Poster !== 'N/A' ? item.Poster : 'https://placehold.jp/100x150.png' }}
         style={styles.poster}
       />
       <View style={styles.cardContent}>
