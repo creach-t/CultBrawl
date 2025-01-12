@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import api from '../services/api';
 import { Ionicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useUser } from '../context/UserContext';
 import { useFocusEffect } from '@react-navigation/native';
-import CardBattle from '../components/cardBattle'; // Assurez-vous que le chemin est correct
+import CardBattle from '../components/cardBattle';
 
 interface Battle {
   id: number;
@@ -44,19 +45,25 @@ export default function BattleList() {
     }
   };
 
-  useEffect(() => {
-    fetchBattles();
-  }, []);
-
+  // Mise à jour des données toutes les xx secondes en focus
   useFocusEffect(
     React.useCallback(() => {
-      fetchBattles();
+      fetchBattles(); // Initial fetch on focus
+
+      const interval = setInterval(() => {
+        
+        console.log(`${new Date()} Mise à jour automatique de la liste des battles...`);
+        fetchBattles(); // Récupération périodique
+      }, 10000); // Intervalle défini (par ex. 10 secondes)
+
+      return () => clearInterval(interval); // Nettoyage de l'intervalle lorsque la page perd le focus
     }, [])
   );
 
   const renderBattle = ({ item }: { item: Battle }) => (
     <CardBattle
       battle={item}
+      user={user}
     />
   );
 
@@ -64,23 +71,23 @@ export default function BattleList() {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#6200ee" />
-        <Text>Chargement des battles...</Text>
+        <Text>battles loading...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Liste des Battles</Text>
       {user && (
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => router.push('/addbattle')}
         >
-          <Ionicons name="add-circle-outline" size={28} color="white" />
-          <Text style={styles.addButtonText}>Lancer une Battle</Text>
+          <MaterialCommunityIcons name="boxing-glove" size={28} color="white" />
+          <Text style={styles.addButtonText}>Create Battle</Text>
         </TouchableOpacity>
       )}
+      <Text style={styles.header}>Battles list</Text>
       {battles?.length > 0 ? (
         <FlatList
           data={battles}

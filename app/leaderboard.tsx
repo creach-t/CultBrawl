@@ -1,51 +1,78 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import api from '../services/api';
+import { useFocusEffect } from 'expo-router';
 
 export default function Leaderboard() {
   const [userLeaderboard, setUserLeaderboard] = useState([]);
   const [entityLeaderboard, setEntityLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchLeaderboard = async () => {
+    try {
+      const userResponse = await api.get('/user/leaderboard');
+      const entityResponse = await api.get('/entity/leaderboard');
+      setUserLeaderboard(userResponse);
+      setEntityLeaderboard(entityResponse);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du leaderboard :', error);
+    } finally {
+      setLoading(false);
+    }
+  };
   useEffect(() => {
-    const fetchLeaderboard = async () => {
-      try {
-        const userResponse = await api.get('/user/leaderboard');
-        //const entityResponse = await api.get('/entity/leaderboard');
-        const entityResponse = await api.get('/entity');
-        
-        setUserLeaderboard(userResponse);
-        setEntityLeaderboard(entityResponse);
-      } catch (error) {
-        console.error("Erreur lors de la récupération du leaderboard :", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchLeaderboard();
   }, []);
 
+    useFocusEffect(
+      React.useCallback(() => {
+        fetchLeaderboard(); // Initial fetch on focus
+  
+        const interval = setInterval(() => {
+          console.log('Mise à jour automatique du leaderboard...');
+          fetchLeaderboard(); // Récupération périodique
+        }, 10000); // Intervalle défini (par ex. 10 secondes)
+  
+        return () => clearInterval(interval); // Nettoyage de l'intervalle lorsque la page perd le focus
+      }, [])
+    );
+
   const renderUserItem = ({ item, index }) => (
-    <View style={styles.item}>
-      <Text style={styles.rank}>{index + 1}.</Text>
-      <Text style={styles.name}>{item.username}</Text>
+    <LinearGradient
+      colors={index === 0 ? ['#ffd700', '#ffdb4d'] : ['#ffffff', '#f0f0f0']}
+      style={styles.item}
+    >
+      <Text style={[styles.rank, index === 0 && styles.firstPlaceRank]}>
+        {index + 1}
+      </Text>
+      <Text style={[styles.name, index === 0 && styles.firstPlaceName]}>
+        {item.username}
+      </Text>
       <Text style={styles.points}>{item.points} pts</Text>
-    </View>
+    </LinearGradient>
   );
 
   const renderEntityItem = ({ item, index }) => (
-    <View style={styles.item}>
-      <Text style={styles.rank}>{index + 1}.</Text>
-      <Text style={styles.name}>{item.name}</Text>
-      <Text style={styles.points}>{item.votes} votes</Text>
-    </View>
+    <LinearGradient
+      colors={index === 0 ? ['#ffd700', '#fff170'] : ['#ffffff', '#f0f0f0']}
+      style={styles.item}
+    >
+      <Image source={{ uri: item.imageUrl }} style={styles.entityImage} />
+      <View style={styles.entityInfo}>
+        <Text style={[styles.name, index === 0 && styles.firstPlaceName]}>
+          {item.name}
+        </Text>
+        <Text style={styles.points}>{item.votes} votes</Text>
+      </View>
+    </LinearGradient>
   );
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6200ee" />
+        <Text>Chargement du leaderboard...</Text>
       </View>
     );
   }
@@ -54,19 +81,27 @@ export default function Leaderboard() {
     <View style={styles.container}>
       <Text style={styles.title}>Leaderboard</Text>
 
-      <Text style={styles.sectionTitle}>Top Joueurs</Text>
-      <FlatList
-        data={userLeaderboard}
-        renderItem={renderUserItem}
-        keyExtractor={(item) => item.id.toString()}
-      />
+      <Text style={styles.sectionTitle}>Top Players</Text>
+      {userLeaderboard.length > 0 ? (
+        <FlatList
+          data={userLeaderboard}
+          renderItem={renderUserItem}
+          keyExtractor={(item) => item.id.toString()}
+        />
+      ) : (
+        <Text style={styles.emptyMessage}>No classed Player yet.</Text>
+      )}
 
-      <Text style={styles.sectionTitle}>Top Entités</Text>
-      <FlatList
-        data={entityLeaderboard}
-        renderItem={renderEntityItem}
-        keyExtractor={(item) => item.id.toString()}
-      />
+      <Text style={styles.sectionTitle}>Top Entity</Text>
+      {entityLeaderboard.length > 0 ? (
+        <FlatList
+          data={entityLeaderboard}
+          renderItem={renderEntityItem}
+          keyExtractor={(item) => item.id.toString()}
+        />
+      ) : (
+        <Text style={styles.emptyMessage}>No classed Entity yet.</Text>
+      )}
     </View>
   );
 }
@@ -97,9 +132,8 @@ const styles = StyleSheet.create({
   },
   item: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 15,
-    backgroundColor: '#fff',
     borderRadius: 8,
     marginBottom: 10,
     shadowColor: '#000',
@@ -112,15 +146,40 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#6200ee',
+    width: 30,
+    textAlign: 'center',
+  },
+  firstPlaceRank: {
+    color: '#ffd700',
   },
   name: {
     fontSize: 18,
     flex: 1,
     marginLeft: 10,
+    color: '#333',
+  },
+  firstPlaceName: {
+    color: '#000',
+    fontWeight: 'bold',
   },
   points: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
+  },
+  entityImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 15,
+  },
+  entityInfo: {
+    flex: 1,
+  },
+  emptyMessage: {
+    textAlign: 'center',
+    marginVertical: 10,
+    color: '#888',
+    fontStyle: 'italic',
   },
 });

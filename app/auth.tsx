@@ -39,7 +39,7 @@ export default function AuthScreen() {
         }).start(() => {
           setMessage('');
         });
-      }, 3000); // Disparaît après 3 secondes
+      }, 3000);
     });
   };
 
@@ -56,6 +56,7 @@ export default function AuthScreen() {
         const userData = {
           username,
           token: response.token,
+          id: response.user.id,
         };
   
         await AsyncStorage.setItem('user', JSON.stringify(userData));

@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Image,
 } from 'react-native';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
@@ -32,11 +33,11 @@ export default function AddBattle() {
     fetchEntities();
   }, []);
 
-    useFocusEffect(
-      React.useCallback(() => {
-        fetchEntities();
-      }, [])
-    );
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchEntities();
+    }, [])
+  );
 
   const fetchEntities = async () => {
     setLoading(true);
@@ -68,19 +69,23 @@ export default function AddBattle() {
     }
 
     try {
-      const response = await api.post('/battle', {
+      await api.post('/battle', {
         entity1Id: selectedEntities[0].id,
         entity2Id: selectedEntities[1].id,
         durationHours: 1,
-        createdById: 1,
+        createdById: user?.id,
       });
 
       Alert.alert('Succès', 'Bataille créée avec succès.');
-      router.push('/battlelist');  // Redirection vers la liste des batailles
+      router.push('/battlelist'); // Redirection vers la liste des batailles
     } catch (error) {
-      console.error("Erreur lors de la création de la bataille :", error);
-      Alert.alert("Erreur", "Impossible de créer la bataille.");
+      console.error('Erreur lors de la création de la bataille :', error);
+      Alert.alert('Erreur', "Impossible de créer la bataille.");
     }
+  };
+
+  const handleAddEntity = () => {
+    router.push('/addentity'); // Redirection vers une page pour ajouter une entité
   };
 
   const renderEntity = ({ item }: { item: Entity }) => {
@@ -90,7 +95,10 @@ export default function AddBattle() {
         style={[styles.card, isSelected && styles.selectedCard]}
         onPress={() => toggleSelectEntity(item)}
       >
-        <Text style={styles.cardText}>{item.name}</Text>
+        <View style={styles.entityInfo}>
+          <Image source={{ uri: item.imageUrl }} style={styles.entityImage} />
+          <Text style={styles.cardText}>{item.name}</Text>
+        </View>
         {isSelected && <Ionicons name="checkmark-circle" size={24} color="#6200ee" />}
       </TouchableOpacity>
     );
@@ -99,6 +107,11 @@ export default function AddBattle() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Créer une Bataille</Text>
+
+      <TouchableOpacity style={styles.addButton} onPress={handleAddEntity}>
+        <Ionicons name="add-circle-outline" size={24} color="white" />
+        <Text style={styles.addButtonText}>Ajouter une Entité</Text>
+      </TouchableOpacity>
 
       {loading ? (
         <ActivityIndicator size="large" color="#6200ee" />
@@ -137,8 +150,24 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#333',
   },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#6200ee',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 20,
+    alignSelf: 'center',
+  },
+  addButtonText: {
+    color: 'white',
+    fontSize: 16,
+    marginLeft: 10,
+    fontWeight: '500',
+  },
   card: {
-    padding: 20,
+    padding: 15,
     marginBottom: 15,
     backgroundColor: '#fff',
     borderRadius: 8,
@@ -157,6 +186,16 @@ const styles = StyleSheet.create({
   },
   cardText: {
     fontSize: 18,
+  },
+  entityInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  entityImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
   },
   createButton: {
     backgroundColor: '#6200ee',

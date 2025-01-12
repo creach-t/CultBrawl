@@ -1,37 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import api from '../services/api';
 import { useUser } from '../context/UserContext';
 
 export default function Account() {
-  const { user } = useUser();  // Récupère le user et token du contexte
+  const { user } = useUser();  
   const [profile, setProfile] = useState({});
   const [isEditing, setIsEditing] = useState({
     firstname: false,
     lastname: false,
     email: false,
-    imageUrl: false,
   });
-
   const [updatedUser, setUpdatedUser] = useState({});
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchUserProfile();
     } else {
-      router.push('/auth');  // Redirige vers la connexion si pas connecté
+      router.push('/auth'); 
     }
   }, [user]);
 
   const fetchUserProfile = async () => {
     try {
       const response = await api.get('/user');
-      if (response) {
-        setProfile(response);
-        setUpdatedUser(response);
-      }
-        
+      setProfile(response);
+      setUpdatedUser(response);
     } catch (error) {
       console.error('Erreur lors de la récupération du profil:', error);
     }
@@ -43,10 +40,7 @@ export default function Account() {
 
   const handleSave = async (field) => {
     try {
-      await api.put(
-        '/profile',
-        { [field]: updatedUser[field] },
-      );
+      await api.put(`/user/${user.id}`, { [field]: updatedUser[field] });
       setProfile({ ...profile, [field]: updatedUser[field] });
       handleEdit(field);
     } catch (error) {
@@ -56,6 +50,54 @@ export default function Account() {
 
   const handleInputChange = (field, value) => {
     setUpdatedUser({ ...updatedUser, [field]: value });
+  };
+
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaType,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      handleUploadImage(result.assets[0].uri);
+    }
+  };
+
+  const handleUploadImage = async (uri) => {
+    try {
+      setUploading(true);
+
+      const formData = new FormData();
+      formData.append('photo', {
+        uri,
+        name: `profile-${user.id}.jpg`,
+        type: 'image/jpeg',
+      });
+
+      const response = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const imageUrl = response.fullUrl; 
+      await handleSaveProfileImage(imageUrl);
+      Alert.alert('Succès', 'Image de profil mise à jour avec succès.');
+    } catch (error) {
+      console.error('Erreur lors de l\'upload de l\'image :', error);
+      Alert.alert('Erreur', 'Impossible de mettre à jour l\'image de profil.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSaveProfileImage = async (imageUrl) => {
+    try {
+      await api.put(`/user/${user.id}`, { imageUrl });
+      setProfile({ ...profile, imageUrl });
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour de l\'image de profil:', error);
+    }
   };
 
   return (
@@ -130,24 +172,11 @@ export default function Account() {
 
       <View style={styles.fieldContainer}>
         <Text style={styles.label}>Image de profil:</Text>
-        {isEditing.imageUrl ? (
-          <TextInput
-            style={styles.input}
-            value={updatedUser.imageUrl}
-            onChangeText={(text) => handleInputChange('imageUrl', text)}
-          />
-        ) : (
-          <Text style={styles.text}>{profile.imageUrl || 'Non renseigné'}</Text>
-        )}
-        <TouchableOpacity
-          onPress={() =>
-            isEditing.imageUrl ? handleSave('imageUrl') : handleEdit('imageUrl')
-          }
-        >
-          <Text style={styles.editButton}>
-            {isEditing.imageUrl ? 'Enregistrer' : 'Modifier'}
-          </Text>
-        </TouchableOpacity>
+        <Image
+          source={{ uri: profile.imageUrl || 'https://via.placeholder.com/150' }}
+          style={styles.image}
+        />
+        <Button title="Modifier l'image" onPress={handlePickImage} disabled={uploading} />
       </View>
 
       <Button title="Retour" onPress={() => router.back()} />
@@ -196,5 +225,11 @@ const styles = StyleSheet.create({
     color: '#007BFF',
     fontSize: 16,
     textAlign: 'center',
+  },
+  image: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginVertical: 10,
   },
 });

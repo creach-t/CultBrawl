@@ -5,7 +5,7 @@ import Toast from 'react-native-toast-message';
 
 // Crée une instance Axios avec une configuration de base
 const api = axios.create({
-  baseURL: 'http://192.168.1.26:3000/api',  // Adresse de ton backend
+  baseURL: 'http://192.168.1.26:3000/api',  // Adresse de votre backend
   timeout: 5000,
 });
 
@@ -29,62 +29,24 @@ api.interceptors.request.use(
   }
 );
 
-// Méthodes pour les requêtes API
-const apiService = {
-  get: async (endpoint) => {
-    try {
-      const response = await api.get(endpoint);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  post: async (endpoint, data = {}, config = {}) => {
-    try {
-      const response = await api.post(endpoint, data, config);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  put: async (endpoint, data = {}, config = {}) => {
-    try {
-      const response = await api.put(endpoint, data, config);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-
-  delete: async (endpoint, config = {}) => {
-    try {
-      const response = await api.delete(endpoint, config);
-      return response.data;
-    } catch (error) {
-      handleApiError(error);
-    }
-  },
-};
-
-// Gestion des erreurs avec notification
+// Gestion des erreurs API avec notification et redirection
 const handleApiError = async (error) => {
   if (error.response) {
     console.error('Erreur API:', error.response.data);
-    
+
     Toast.show({
       type: 'error',
       text1: 'Erreur API',
-      text2: error.response.data.message || 'Une erreur s\'est produite.',
+      text2: error.response.data.error || 'Une erreur s\'est produite.',
     });
 
-    if (error.response.status === 403) {
+    if (error.response.status === 401) {
+      // Supprime le token et redirige vers la page de connexion
       await AsyncStorage.removeItem('user');
       router.push('/auth');
     }
-    
-    throw new Error(error.response.data.message || 'Erreur lors de la requête.');
+
+    throw new Error(error.response.data.error || 'Erreur lors de la requête.');
   } else if (error.request) {
     console.error('Aucune réponse du serveur:', error.request);
 
@@ -106,6 +68,45 @@ const handleApiError = async (error) => {
 
     throw new Error('Erreur inattendue.');
   }
+};
+
+// Méthodes pour les requêtes API
+const apiService = {
+  get: async (endpoint) => {
+    try {
+      const response = await api.get(endpoint);
+      return response.data;
+    } catch (error) {
+      await handleApiError(error);
+    }
+  },
+
+  post: async (endpoint, data = {}, config = {}) => {
+    try {
+      const response = await api.post(endpoint, data, config);
+      return response.data;
+    } catch (error) {
+      await handleApiError(error);
+    }
+  },
+
+  put: async (endpoint, data = {}, config = {}) => {
+    try {
+      const response = await api.put(endpoint, data, config);
+      return response.data;
+    } catch (error) {
+      await handleApiError(error);
+    }
+  },
+
+  delete: async (endpoint, config = {}) => {
+    try {
+      const response = await api.delete(endpoint, config);
+      return response.data;
+    } catch (error) {
+      await handleApiError(error);
+    }
+  },
 };
 
 export default apiService;

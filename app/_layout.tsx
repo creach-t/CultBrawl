@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { UserProvider, useUser } from '../context/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Header from './header';
+import { MessageProvider } from '../context/MessageContext';
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
@@ -18,7 +19,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <PaperProvider>
         <UserProvider>
-          <RootWithTabs />
+          <MessageProvider>
+            <RootWithTabs />
+          </MessageProvider>
         </UserProvider>
       </PaperProvider>
     </SafeAreaProvider>
@@ -34,13 +37,14 @@ function RootWithTabs() {
   const allowedScreens = [
     { name: 'index', title: 'Home', icon: 'home.tab', visible: true },
     { name: 'battlelist', title: 'Battles', icon: 'battle.tab', visible: true },
-    { name: 'entitylist', title: 'Entity', icon: 'entity.tab', visible: !!user },
+    { name: 'entitylist', title: 'Entity', icon: 'entity.tab', visible: false },
     { name: 'account', title: 'Account', icon: 'account.tab', visible: false },
     { name: 'auth', title: 'Login', icon: 'account.circle', visible: false },
     { name: 'signup', title: 'Register', icon: 'account.circle', visible: false },
     { name: 'header', title: 'Battle', icon: 'battle.tab', visible: false },
     { name: 'leaderboard', title: 'Leaderboard', icon: 'leaderboard.tab', visible: true },
     { name: 'addmovie', title: 'Add Movie', icon: 'leaderboard.tab', visible: false },
+    { name: 'addentity', title: 'Add Entity', icon: 'leaderboard.tab', visible: false },
     { name: 'addbattle', title: 'Add Battle', icon: 'leaderboard.tab', visible: false },
   ];
 

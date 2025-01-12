@@ -25,7 +25,10 @@ interface Entity {
 export default function EntityList() {
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const { user } = useUser();
+
+  const categories = ['All', 'Movies', 'Books', 'Games'];
 
   const fetchEntities = async () => {
     setLoading(true);
@@ -43,7 +46,15 @@ export default function EntityList() {
     }
   };
 
-  // Utilisation de useFocusEffect pour recharger à chaque fois que la page est affichée
+  const filterEntities = () => {
+    if (selectedCategory === 'All') return entities;
+    return entities.filter((entity) => entity.type === selectedCategory);
+  };
+
+  const sortedEntities = filterEntities().sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+
   useFocusEffect(
     useCallback(() => {
       fetchEntities();
@@ -63,11 +74,37 @@ export default function EntityList() {
     </View>
   );
 
-  if (!user){
+  const renderCategoryTabs = () => (
+    <View style={styles.tabContainer}>
+      {categories.map((category) => (
+        <TouchableOpacity
+          key={category}
+          style={[
+            styles.tab,
+            selectedCategory === category && styles.activeTab,
+          ]}
+          onPress={() => setSelectedCategory(category)}
+        >
+          <Text
+            style={[
+              styles.tabText,
+              selectedCategory === category && styles.activeTabText,
+            ]}
+          >
+            {category}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+
+  if (!user) {
     return (
       <View style={styles.container}>
         <Text style={styles.header}>Liste des Entités</Text>
-        <Text style={styles.emptyText}>Vous devez être connecté pour accéder à cette page.</Text>
+        <Text style={styles.emptyText}>
+          Vous devez être connecté pour accéder à cette page.
+        </Text>
       </View>
     );
   }
@@ -84,11 +121,13 @@ export default function EntityList() {
         <Text style={styles.addButtonText}>Ajouter une Entité Film</Text>
       </TouchableOpacity>
 
+      {renderCategoryTabs()}
+
       {loading ? (
         <ActivityIndicator size="large" color="#6200ee" />
       ) : (
         <FlatList
-          data={entities}
+          data={sortedEntities}
           keyExtractor={(item) => item.id}
           renderItem={renderEntity}
           ListEmptyComponent={
@@ -163,6 +202,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     marginLeft: 10,
     fontWeight: '500',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+  },
+  tab: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: '#e0e0e0',
+  },
+  activeTab: {
+    backgroundColor: '#6200ee',
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+  },
+  activeTabText: {
+    color: 'white',
   },
   emptyText: {
     textAlign: 'center',
